@@ -1,14 +1,5 @@
 // Admin Page Script
 
-// Protect page
-protectPage();
-
-// Display user name
-displayUserName();
-
-// Setup logout
-setupLogout();
-
 // Global variables
 let allUsers = [];
 let allImages = [];
@@ -16,6 +7,21 @@ let currentEditUserId = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
+    try {
+        // Protect page
+        // protectPage(); // Commented out since API doesn't require authentication
+
+        // Display user name
+        displayUserName();
+
+        // Setup logout
+        setupLogout();
+
+        console.log('✅ Page setup complete');
+    } catch (error) {
+        console.error('❌ Error during page setup:', error);
+    }
+
     loadStats();
     loadUsers();
     setupTabs();
@@ -26,16 +32,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // Stats Functions
 // ===========================
 async function loadStats() {
+    console.log('🔄 Loading stats...', API_CONFIG);
     try {
         // Load users count
-        const usersResponse = await fetch(`${API_CONFIG.BASE_URL}/users`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const usersResponse = await fetch(`${API_CONFIG.BASE_URL}/users`);
+        console.log('📊 Users Response:', usersResponse.status);
 
         if (usersResponse.ok) {
             const users = await usersResponse.json();
+            console.log('👥 Users loaded:', users.length);
             document.getElementById('totalUsers').textContent = users.length;
             allUsers = users;
         } else {
@@ -43,14 +48,12 @@ async function loadStats() {
         }
 
         // Load images count
-        const imagesResponse = await fetch(`${API_CONFIG.BASE_URL}/images`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const imagesResponse = await fetch(`${API_CONFIG.BASE_URL}/images`);
+        console.log('📸 Images Response:', imagesResponse.status);
 
         if (imagesResponse.ok) {
             const images = await imagesResponse.json();
+            console.log('🖼️ Images loaded:', images.length);
             document.getElementById('totalImages').textContent = images.length;
 
             // Calculate today's analysis
@@ -113,21 +116,19 @@ function setupTabs() {
 // Users CRUD Functions
 // ===========================
 async function loadUsers() {
+    console.log('📋 Loading users...');
     const tbody = document.getElementById('usersTableBody');
     tbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading users...</td></tr>';
 
     try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/users`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await fetch(`${API_CONFIG.BASE_URL}/users`);
 
         if (!response.ok) {
             throw new Error('Failed to load users');
         }
 
         const users = await response.json();
+        console.log('✅ Users data:', users);
         allUsers = users;
 
         if (users.length === 0) {
@@ -191,10 +192,7 @@ window.deleteUser = async function (userId) {
 
     try {
         const response = await fetch(`${API_CONFIG.BASE_URL}/users/${userId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+            method: 'DELETE'
         });
 
         if (!response.ok) {
@@ -236,8 +234,7 @@ document.getElementById('userForm').addEventListener('submit', async (e) => {
             response = await fetch(`${API_CONFIG.BASE_URL}/users/${currentEditUserId}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(userData)
             });
@@ -276,8 +273,9 @@ document.getElementById('cancelUserBtn').addEventListener('click', () => {
 // Images CRUD Functions
 // ===========================
 async function loadImages(userId = null) {
+    console.log('🖼️ Loading images...', userId);
     const tbody = document.getElementById('imagesTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading images...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading images...</td></tr>';
 
     try {
         let url = `${API_CONFIG.BASE_URL}/images`;
@@ -285,21 +283,18 @@ async function loadImages(userId = null) {
             url += `?userId=${userId}`;
         }
 
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await fetch(url);
 
         if (!response.ok) {
             throw new Error('Failed to load images');
         }
 
         const images = await response.json();
+        console.log('✅ Images data:', images.length, 'images');
         allImages = images;
 
         if (images.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No images found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No images found</td></tr>';
             return;
         }
 
@@ -307,6 +302,7 @@ async function loadImages(userId = null) {
             <tr>
                 <td>${image.id}</td>
                 <td>${image.userId}</td>
+                <td>${image.foodName || 'N/A'}</td>
                 <td>
                     <img src="${API_CONFIG.BASE_URL.replace('/api', '')}${image.imagePath}" 
                          alt="Image" 
@@ -328,7 +324,7 @@ async function loadImages(userId = null) {
         `).join('');
     } catch (error) {
         console.error('Error loading images:', error);
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color: red;">Error loading images: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: red;">Error loading images: ${error.message}</td></tr>`;
     }
 }
 
@@ -356,11 +352,7 @@ window.viewImage = async function (imageId) {
 
         // If image not found or missing important fields, fetch from API
         if (!image || !image.imagePath || !image.createdAt) {
-            const resp = await fetch(`${API_CONFIG.BASE_URL}/images/${imageId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const resp = await fetch(`${API_CONFIG.BASE_URL}/images/${imageId}`);
 
             if (!resp.ok) {
                 throw new Error('Failed to load image details from API');
@@ -373,50 +365,44 @@ window.viewImage = async function (imageId) {
             image = Array.isArray(data) ? data[0] : data;
 
             // Update local cache if possible
-            if (image) {
-                const idx = allImages.findIndex(i => i.id === image.id);
-                if (idx >= 0) allImages[idx] = image;
-                else allImages.push(image);
+            if (image.id) {
+                allImages = allImages.map(img => img.id === image.id ? image : img);
             }
         }
 
-        if (!image) {
-            alert('Image data not available.');
-            return;
-        }
-
-        console.log('📊 Image data being displayed:', image);
-
+        // Set modal fields
         document.getElementById('modalImageId').textContent = image.id ?? 'N/A';
         document.getElementById('modalUserId').textContent = image.userId ?? 'N/A';
+        document.getElementById('modalFoodName').textContent = image.foodName ?? 'N/A';
         document.getElementById('modalKcal').textContent = (image.kcal ?? 'N/A');
-        // some APIs may use different field names for gam/ai suggestion; try common fallbacks
-        document.getElementById('modalGam').textContent = (image.gam ?? image.fat ?? 'N/A');
-        document.getElementById('modalAiSuggestion').textContent = (image.aiSuggestion ?? image.ai_suggestion ?? image.aiResult ?? 'No suggestion available');
-        document.getElementById('modalCreatedAt').textContent = image.createdAt ? new Date(image.createdAt).toLocaleString() : 'N/A';
+        document.getElementById('modalGam').textContent = (image.gam ?? 'N/A');
+        document.getElementById('modalCreatedAt').textContent = new Date(image.createdAt).toLocaleString();
 
-        // Image preview
-        if (image.imagePath) {
-            const imgSrc = `${API_CONFIG.BASE_URL.replace('/api', '')}${image.imagePath}`;
-            console.log('🖼️ Image source URL:', imgSrc);
-
-            const preview = document.getElementById('modalImagePreview');
-            preview.src = imgSrc;
-            preview.onerror = function () {
-                console.error('❌ Failed to load image from:', imgSrc);
-                this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect fill="%23ddd" width="400" height="400"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="20">Image not found</text></svg>';
-            };
-        } else {
-            console.warn('⚠️ No imagePath found in image data');
-            // No image path — use placeholder
-            document.getElementById('modalImagePreview').src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect fill="%23eee" width="400" height="400"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="18">No image available</text></svg>';
-            document.getElementById('modalImagePreview').onerror = null;
+        // Set AI suggestion
+        const aiSuggestionDiv = document.getElementById('modalAiSuggestion');
+        if (aiSuggestionDiv) {
+            aiSuggestionDiv.textContent = image.aiSuggestion ?? 'No suggestion available';
         }
 
-        document.getElementById('imageModal').style.display = 'block';
-    } catch (err) {
-        console.error('Error viewing image:', err);
-        alert('Unable to load image details. Check console for more information.');
+        // Set image preview
+        const imageUrl = API_CONFIG.BASE_URL.replace('/api', '') + image.imagePath;
+        const modalImagePreview = document.getElementById('modalImagePreview');
+        if (modalImagePreview) {
+            modalImagePreview.src = imageUrl;
+            modalImagePreview.onerror = function () {
+                this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect fill="%23ddd" width="300" height="300"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Image Not Found</text></svg>';
+            };
+        }
+
+        // Show modal
+        const imageModal = document.getElementById('imageModal');
+        if (imageModal) {
+            imageModal.style.display = 'block';
+            console.log('✅ Image modal displayed for image:', imageId);
+        }
+    } catch (error) {
+        console.error('Error viewing image:', error);
+        alert('Failed to view image. Please try again.');
     }
 };
 
@@ -428,10 +414,7 @@ window.deleteImage = async function (imageId) {
 
     try {
         const response = await fetch(`${API_CONFIG.BASE_URL}/images/${imageId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+            method: 'DELETE'
         });
 
         if (!response.ok) {
@@ -447,43 +430,92 @@ window.deleteImage = async function (imageId) {
     }
 };
 
-// Close Image Modal Button
-document.getElementById('closeImageModalBtn').addEventListener('click', () => {
-    document.getElementById('imageModal').style.display = 'none';
-});
-
 // ===========================
-// Modal Management
+// Modal and Other Utilities
 // ===========================
 function setupModals() {
-    const modals = document.querySelectorAll('.modal');
-    const closeButtons = document.querySelectorAll('.modal .close');
-
-    // Close button click
-    closeButtons.forEach(btn => {
-        btn.addEventListener('click', function () {
-            this.closest('.modal').style.display = 'none';
-        });
-    });
-
-    // Click outside modal
-    window.addEventListener('click', (e) => {
-        modals.forEach(modal => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-    });
-
-    // ESC key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            modals.forEach(modal => {
-                modal.style.display = 'none';
+    try {
+        // User Modal
+        const userModal = document.getElementById('userModal');
+        if (userModal) {
+            userModal.addEventListener('click', (e) => {
+                if (e.target === userModal) {
+                    userModal.style.display = 'none';
+                }
             });
+
+            const closeUserBtn = userModal.querySelector('.close');
+            if (closeUserBtn) {
+                closeUserBtn.addEventListener('click', () => {
+                    userModal.style.display = 'none';
+                });
+            }
+
+            const cancelUserBtn = document.getElementById('cancelUserBtn');
+            if (cancelUserBtn) {
+                cancelUserBtn.addEventListener('click', () => {
+                    userModal.style.display = 'none';
+                });
+            }
+
+            console.log('✅ User modal setup complete');
+        } else {
+            console.warn('⚠️ User modal not found');
+        }
+
+        // Image Modal
+        const imageModal = document.getElementById('imageModal');
+        if (imageModal) {
+            imageModal.addEventListener('click', (e) => {
+                if (e.target === imageModal) {
+                    imageModal.style.display = 'none';
+                }
+            });
+
+            const closeImageBtn = imageModal.querySelector('.close');
+            if (closeImageBtn) {
+                closeImageBtn.addEventListener('click', () => {
+                    imageModal.style.display = 'none';
+                });
+            }
+
+            const closeImageModalBtn = document.getElementById('closeImageModalBtn');
+            if (closeImageModalBtn) {
+                closeImageModalBtn.addEventListener('click', () => {
+                    imageModal.style.display = 'none';
+                });
+            }
+
+            console.log('✅ Image modal setup complete');
+        } else {
+            console.warn('⚠️ Image modal not found');
+        }
+    } catch (error) {
+        console.error('❌ Error setting up modals:', error);
+    }
+}
+
+// Logout function
+function setupLogout() {
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
         }
     });
 }
 
-// Refresh stats every 30 seconds
-setInterval(loadStats, 30000);
+// Display user name
+function displayUserName() {
+    const userName = localStorage.getItem('userName') || 'Admin';
+    document.getElementById('userNameDisplay').textContent = `Welcome, ${userName}`;
+}
+
+// Protect page
+function protectPage() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('You are not authorized to view this page. Please login.');
+        window.location.href = 'login.html';
+    }
+}

@@ -9,6 +9,9 @@ displayUserName();
 // Setup logout
 setupLogout();
 
+// Load existing analyses
+loadExistingAnalyses();
+
 // Get DOM elements
 const uploadForm = document.getElementById('uploadForm');
 const imageInput = document.getElementById('imageInput');
@@ -20,6 +23,81 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 const resultsSection = document.getElementById('resultsSection');
 
 let selectedFile = null;
+
+// Load existing analyses for the current user
+async function loadExistingAnalyses() {
+    const user = getCurrentUser();
+    if (!user || !user.id) {
+        console.error('User not found or not logged in');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GET_IMAGE}?userId=${user.id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const images = await response.json();
+            displayExistingAnalyses(images);
+        } else {
+            console.error('Failed to load existing analyses');
+        }
+    } catch (error) {
+        console.error('Error loading existing analyses:', error);
+    }
+}
+
+// Display existing analyses
+function displayExistingAnalyses(images) {
+    if (!images || images.length === 0) {
+        return;
+    }
+
+    // Create history section if it doesn't exist
+    let historySection = document.getElementById('historySection');
+    if (!historySection) {
+        historySection = document.createElement('section');
+        historySection.id = 'historySection';
+        historySection.className = 'history-section';
+        historySection.innerHTML = `
+            <h2><i class="fas fa-history"></i> Previous Analyses</h2>
+            <div id="historyGrid" class="history-grid"></div>
+        `;
+
+        // Insert after results section
+        const resultsSection = document.querySelector('.results-section');
+        resultsSection.parentNode.insertBefore(historySection, resultsSection.nextSibling);
+    }
+
+    const historyGrid = document.getElementById('historyGrid');
+    historyGrid.innerHTML = '';
+
+    images.forEach(image => {
+        const historyCard = document.createElement('div');
+        historyCard.className = 'history-card';
+        historyCard.onclick = () => displayResults(image);
+
+        const imageUrl = `http://localhost:5288${image.imagePath || image.path}`;
+        const analyzedDate = new Date(image.createdAt).toLocaleDateString();
+
+        historyCard.innerHTML = `
+            <div class="history-image">
+                <img src="${imageUrl}" alt="Food image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOUI5QkE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zZW0iPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4='">
+            </div>
+            <div class="history-info">
+                <h4>${image.foodName || 'Unknown Food'}</h4>
+                <p class="history-date">${analyzedDate}</p>
+                <p class="history-calories">${image.kcal ? image.kcal.toFixed(0) + ' kcal' : ''}</p>
+            </div>
+        `;
+
+        historyGrid.appendChild(historyCard);
+    });
+}
 
 // Handle file input change
 imageInput.addEventListener('change', (e) => {
@@ -125,6 +203,9 @@ uploadForm.addEventListener('submit', async (e) => {
         if (response.ok) {
             // Display results
             displayResults(data);
+
+            // Reload existing analyses to include the new one
+            loadExistingAnalyses();
         } else {
             showError('uploadError', data.message || 'Failed to analyze image');
             uploadForm.style.display = 'block';
@@ -143,6 +224,17 @@ function displayResults(data) {
     // Show results section
     resultsSection.style.display = 'block';
     uploadForm.style.display = 'block';
+
+    // Display food name if available
+    const foodNameCard = document.getElementById('foodNameCard');
+    const foodNameValue = document.getElementById('foodNameValue');
+
+    if (data.foodName) {
+        foodNameValue.textContent = data.foodName;
+        foodNameCard.style.display = 'block';
+    } else {
+        foodNameCard.style.display = 'none';
+    }
 
     // Update nutrient values
     if (data.nutrientAnalysis && data.nutrientAnalysis.length > 0) {
