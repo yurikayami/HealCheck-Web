@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealCheck - Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-heartbeat"></i>
+                <span>HealCheck</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="admin.html"><i class="fas fa-user-shield"></i> Admin</a></li>
+                <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+            <div class="nav-user">
+                <i class="fas fa-user-circle"></i>
+                <span id="userName">User</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <h1>Welcome to HealCheck</h1>
+                <p>Upload a food image to get instant AI-powered nutritional analysis</p>
+            </section>
+
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-card">
+                    <h2><i class="fas fa-camera"></i> Analyze Food Image</h2>
+
+                    <form id="uploadForm" class="upload-form">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <p class="upload-text">Drag & Drop your food image here</p>
+                            <p class="upload-subtext">or</p>
+                            <label for="imageInput" class="btn btn-secondary">
+                                <i class="fas fa-folder-open"></i> Browse Files
+                            </label>
+                            <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;"
+                                required>
+                            <p class="upload-hint">Supported: JPG, PNG, GIF, WEBP (Max 10MB)</p>
+                        </div>
+
+                        <div id="imagePreview" class="image-preview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview">
+                            <button type="button" class="btn-remove" id="removeImage">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div id="uploadError" class="error-message" style="display: none;"></div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="analyzeBtn">
+                            <i class="fas fa-magic"></i> Analyze Image
+                        </button>
+                    </form>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Analyzing image with AI...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <h2><i class="fas fa-chart-pie"></i> Nutritional Analysis Results</h2>
+
+                <div class="results-grid">
+                    <!-- Nutrition Cards -->
+                    <div class="nutrient-card calories">
+                        <div class="nutrient-icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="nutrient-info">
+                            <h3>Calories</h3>
+                            <p class="nutrient-value" id="caloriesValue">--</p>
+                            <p class="nutrient-unit">kcal</p>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-card protein">
+                        <div class="nutrient-icon">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <div class="nutrient-info">
+                            <h3>Protein</h3>
+                            <p class="nutrient-value" id="proteinValue">--</p>
+                            <p class="nutrient-unit">grams</p>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-card fat">
+                        <div class="nutrient-icon">
+                            <i class="fas fa-bacon"></i>
+                        </div>
+                        <div class="nutrient-info">
+                            <h3>Fat</h3>
+                            <p class="nutrient-value" id="fatValue">--</p>
+                            <p class="nutrient-unit">grams</p>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-card carbs">
+                        <div class="nutrient-icon">
+                            <i class="fas fa-bread-slice"></i>
+                        </div>
+                        <div class="nutrient-info">
+                            <h3>Carbohydrate</h3>
+                            <p class="nutrient-value" id="carbsValue">--</p>
+                            <p class="nutrient-unit">grams</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Suggestion -->
+                <div class="suggestion-card">
+                    <h3><i class="fas fa-lightbulb"></i> AI Health Suggestion</h3>
+                    <p id="suggestionText">--</p>
+                </div>
+
+                <!-- Analysis Details -->
+                <div class="details-card">
+                    <h3><i class="fas fa-info-circle"></i> Analysis Details</h3>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Image ID:</span>
+                            <span class="detail-value" id="imageId">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Analyzed:</span>
+                            <span class="detail-value" id="analyzedDate">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Confidence:</span>
+                            <span class="detail-value">High</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>
